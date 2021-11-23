@@ -1,29 +1,28 @@
 # -*- coding: UTF-8 -*-
 import os
-import click
+import argparse
+from glob import glob
 
 
-@click.command()
-@click.option("-i", "infile", help="指定仪器输出的txt文件路径，可将脚本放在需要操作的文件下运行，"
-                                   "或者使用绝对路径（使用绝对路径时，不能有数字开头的文件夹,文件"
-                                   "名中有空格时应在参数中加引号如：\"work space\")")
-@click.option("-o", "output", help="指定输出文件名，默认为输入文件目录下.tsv文件")
+def parseArgs():
+    parser = argparse.ArgumentParser(description='将xrd下机文件中的txt转化为tsv文件，能够导入search-match中')
 
-def main(infile,output):
-    if infile is None:
-        raise Exception("You must specify the input file with -i, use --help to check the parameter.")
-    infile = rf"{infile}"
+    parser.add_argument('-i', '--input', type = str, required=True, help = '包含txt文件的文件夹路径或者txt文件路径')
+    parser.add_argument('-o', '--output', type = str, required=False, help = '输出文件夹，若不指定，默认为输入文件夹')
+    parser.add_argument('-s', '--suffix', type = str, default='txt', required=False, help = '输入文件的后缀名，默认为txt')
+
+    return parser.parse_args()
+
+
+def std_file(infile,output):
     file_name = os.path.basename(infile).split('.')[0]
     if output == None:
-        output = file_name + '.tsv'
-
-    if '\\' in infile:
-        DIRPATH = os.path.dirname(infile)
-        filepath = infile
+        output = os.path.join(os.path.dirname(infile), f'{file_name}.tsv')
     else:
-        DIRPATH = os.getcwd()
-        filepath = os.path.join(DIRPATH, infile)
-    text = open(filepath, 'r').read()
+        output = os.path.join(os.path.abspath(output), f'{file_name}.tsv')
+
+    text = open(infile, 'rb').read()
+    text = text.decode('gbk')
 
     data = []
     flag = 0
@@ -33,9 +32,25 @@ def main(infile,output):
         if line.startswith('     Angle'):
             flag = 1
 
-    with open(os.path.join(DIRPATH, output), 'w') as f:
+    with open(output, 'w') as f:
         f.write('\n'.join(data))
 
+
+def main():
+    arg = parseArgs()
+    infile = arg.input
+    suffix = arg.suffix
+    output = arg.output
+
+    if infile is None:
+        raise Exception("You must specify the input file with -i, use --help to check the parameter.")
+    infile = os.path.abspath(rf"{infile}")
+    if os.path.isdir(infile):
+        for file_name in glob(os.path.join(infile,f'*.{suffix}')):
+            std_file(file_name,output)
+    elif os.path.isfile(infile):
+        std_file(infile,output)
+    
 
 if __name__ =='__main__':
     main()

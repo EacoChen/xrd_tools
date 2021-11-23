@@ -1,7 +1,17 @@
 # -*- coding: UTF-8 -*-
 import os
-import click
+import argparse
 from glob import glob
+
+
+def parseArgs():
+    parser = argparse.ArgumentParser(description='将xrd下机文件中的ras转化为txt文件，能够导入search-match中')
+
+    parser.add_argument('-i', '--input', type = str, required=True, help = '包含ras文件的文件夹路径或者ras文件路径')
+    parser.add_argument('-o', '--output', type = str, required=False, help = '输出文件夹，若不指定，默认为输入文件夹')
+    parser.add_argument('-s', '--suffix', type = str, default='ras', required=False, help = '输入文件的后缀名，默认为ras')
+
+    return parser.parse_args()
 
 
 def std_file(infile,output):
@@ -11,7 +21,8 @@ def std_file(infile,output):
     else:
         output = os.path.join(os.path.abspath(output), f'{file_name}.tsv')
 
-    text = open(infile, 'r').read()
+    text = open(infile, 'rb').read()
+    text = text.decode('gbk')
 
     data = []
     flag = 0
@@ -27,14 +38,12 @@ def std_file(infile,output):
         f.write('\n'.join(data))
 
 
-@click.command()
-@click.option("-i", "infile", required=True ,help="指定仪器输入的txt文件路径，可将脚本放在需要操作的文件下运行，"
-                                   "或者使用绝对路径（使用绝对路径时，不能有数字开头的文件夹,文件"
-                                   "名中有空格时应在参数中加引号如：\"work space\")")
-@click.option("-o", "output", help="指定输出文件夹，默认为输入文件目录下.tsv文件")
-@click.option("-s", "suffix", default='ras', help="指定输入文件后缀，默认ras")
+def main():
+    arg = parseArgs()
+    infile = arg.input
+    suffix = arg.suffix
+    output = arg.output
 
-def main(infile,output,suffix):
     if infile is None:
         raise Exception("You must specify the input file with -i, use --help to check the parameter.")
     infile = os.path.abspath(rf"{infile}")
