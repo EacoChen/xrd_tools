@@ -33,7 +33,7 @@ def std_file(infile,output):
             flag = 1
 
     with open(output, 'w') as f:
-        f.write('\n'.join(data))
+        f.write(''.join(data))
 
 
 def main():
